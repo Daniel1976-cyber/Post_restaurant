@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Los Taínos — Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080c14;
+      --surface: #0f1420;
+      --surface2: #161c2d;
+      --border: rgba(255,255,255,0.07);
+      --accent: #f59e0b;
+      --accent2: #fbbf24;
+      --success: #10b981;
+      --danger: #ef4444;
+      --indigo: #6366f1;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --muted2: #94a3b8;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 60px;
+      background: #0a0e1a;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; color: var(--accent); }
+    .nav-badge { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: var(--accent); border-radius: 6px; padding: 3px 12px; font-size: 12px; font-weight: 600; color: #fff; background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .last-update { font-size: 12px; color: var(--muted); }
+    .btn-refresh { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); color: var(--accent); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 500; transition: all 0.2s; }
+    .btn-refresh:hover { background: rgba(245,158,11,0.2); }
+    .btn-logout { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted2); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+    .btn-logout:hover { background: rgba(239,68,68,0.1); color: #fca5a5; border-color: rgba(239,68,68,0.3); }
+
+    /* PAGE */
+    .page { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle { font-size: 14px; color: var(--muted2); margin-bottom: 28px; }
+
+    /* METRIC CARDS */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .metric-card:hover { transform: translateY(-2px); }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      transform: translate(30%, -30%);
+      opacity: 0.15;
+    }
+
+    .metric-card.green::before  { background: var(--success); }
+    .metric-card.amber::before  { background: var(--accent); }
+    .metric-card.red::before    { background: var(--danger); }
+    .metric-card.indigo::before { background: var(--indigo); }
+
+    .metric-icon { font-size: 28px; margin-bottom: 12px; }
+    .metric-label { font-size: 12px; color: var(--muted2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .metric-value { font-size: 32px; font-weight: 800; line-height: 1; }
+    .metric-card.green  .metric-value { color: #34d399; }
+    .metric-card.amber  .metric-value { color: var(--accent2); }
+    .metric-card.red    .metric-value { color: #fca5a5; }
+    .metric-card.indigo .metric-value { color: #a5b4fc; }
+    .metric-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    /* CONTENT GRID */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) { .content-grid { grid-template-columns: 1fr; } }
+
+    /* SECTION CARD */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-count {
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 2px 10px;
+    }
+
+    /* TOP PRODUCTS BARS */
+    .product-bar-list { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    .product-bar-item {}
+    .product-bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .product-bar-name { font-size: 13.5px; font-weight: 500; }
+    .product-bar-val { font-size: 13px; color: var(--accent); font-weight: 700; }
+    .product-bar-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+    .product-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #fbbf24); border-radius: 4px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    /* ORDERS TABLE */
+    .orders-table { width: 100%; border-collapse: collapse; }
+    .orders-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .orders-table td { padding: 11px 20px; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .orders-table tr:last-child td { border-bottom: none; }
+    .orders-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .estado-badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-pagado     { background: rgba(16,185,129,0.12); color: #34d399; }
+    .badge-pendiente  { background: rgba(239,68,68,0.12); color: #fca5a5; }
+    .badge-prep       { background: rgba(245,158,11,0.12); color: #fbbf24; }
+    .badge-listo      { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+    .badge-recogido   { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+
+    /* Loading */
+    .loading { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-brand">📊 Los Taínos <span class="nav-badge">🔑 Admin</span></div>
+  <div class="nav-right">
+    <span class="last-update" id="last-update">—</span>
+    <button class="btn-refresh" onclick="cargar()">↻ Actualizar</button>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-title">Dashboard de Ventas</div>
+  <div class="page-subtitle">Estadísticas generales del restaurante Los Taínos</div>
+
+  <!-- METRICS -->
+  <div class="metrics-grid" id="metrics-grid">
+    <div class="loading"><div class="spinner"></div><br>Cargando métricas...</div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-grid">
+    <!-- TOP PRODUCTS -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">🏆 Productos Más Vendidos</div>
+        <span class="section-count" id="prod-count">—</span>
+      </div>
+      <div class="product-bar-list" id="product-bars">
+        <div class="loading">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- RECENT ORDERS -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">📋 Pedidos Recientes</div>
+        <span class="section-count" id="orders-count">—</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>Mesa</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th>ID</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody">
+            <tr><td colspan="4" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const rol = localStorage.getItem('rol');
+if (!rol || rol !== 'admin') window.location.href = '/login.html';
+
+function estadoBadge(estado) {
+  const map = {
+    'pagado':       'badge-pagado',
+    'pendiente':    'badge-pendiente',
+    'en preparación': 'badge-prep',
+    'listo':        'badge-listo',
+    'recogido':     'badge-recogido',
+  };
+  return `<span class="estado-badge ${map[estado] || 'badge-pendiente'}">${estado}</span>`;
+}
+
+async function cargar() {
+  const res = await fetch('/admin/stats');
+  const d = await res.json();
+
+  document.getElementById('last-update').textContent =
+    'Actualizado: ' + new Date().toLocaleTimeString('es-DO', { hour12: false });
+
+  // ── METRICS ──
+  const metHoy = d.totalHoy > 0 ? `$${d.totalHoy}` : `$${d.totalRevenue}`;
+  const metLabel = d.totalHoy > 0 ? 'Ingresos hoy' : 'Ingresos totales';
+  document.getElementById('metrics-grid').innerHTML = `
+    <div class="metric-card green">
+      <div class="metric-icon">💰</div>
+      <div class="metric-label">${metLabel}</div>
+      <div class="metric-value">${metHoy}</div>
+      <div class="metric-sub">${d.pedidosPagados} pedido${d.pedidosPagados !== 1 ? 's' : ''} cobrado${d.pedidosPagados !== 1 ? 's' : ''}</div>
+    </div>
+    <div class="metric-card amber">
+      <div class="metric-icon">📦</div>
+      <div class="metric-label">Pedidos activos</div>
+      <div class="metric-value">${d.pedidosActivos}</div>
+      <div class="metric-sub">En proceso ahora</div>
+    </div>
+    <div class="metric-card indigo">
+      <div class="metric-icon">🧾</div>
+      <div class="metric-label">Total general</div>
+      <div class="metric-value">$${d.totalRevenue}</div>
+      <div class="metric-sub">${d.pedidosPagados} pagados</div>
+    </div>
+    <div class="metric-card red">
+      <div class="metric-icon">📊</div>
+      <div class="metric-label">Ticket promedio</div>
+      <div class="metric-value">${d.pedidosPagados > 0 ? '$' + Math.round(d.totalRevenue / d.pedidosPagados) : '—'}</div>
+      <div class="metric-sub">Por pedido cobrado</div>
+    </div>
+  `;
+
+  // ── TOP PRODUCTS ──
+  const top = d.topProductos || [];
+  document.getElementById('prod-count').textContent = top.length + ' productos';
+  const maxQty = top.length > 0 ? top[0].cantidad : 1;
+  document.getElementById('product-bars').innerHTML = top.length === 0
+    ? '<p style="text-align:center;color:#64748b;font-size:13px;padding:20px;">Sin datos de ventas aún</p>'
+    : top.map((p, i) => {
+        const pct = Math.round((p.cantidad / maxQty) * 100);
+        const medals = ['🥇','🥈','🥉'];
+        return `<div class="product-bar-item">
+          <div class="product-bar-header">
+            <span class="product-bar-name">${medals[i] || '▪'} ${p.nombre}</span>
+            <span class="product-bar-val">${p.cantidad} uds</span>
+          </div>
+          <div class="product-bar-track">
+            <div class="product-bar-fill" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+      }).join('');
+
+  // ── RECENT ORDERS ──
+  const orders = d.recentOrders || [];
+  document.getElementById('orders-count').textContent = orders.length;
+  document.getElementById('orders-tbody').innerHTML = orders.length === 0
+    ? '<tr><td colspan="4" style="text-align:center;color:#64748b;padding:20px;">Sin pedidos registrados</td></tr>'
+    : orders.map(p => `
+        <tr>
+          <td><strong>${p.mesa}</strong></td>
+          <td style="color:#f59e0b;font-weight:700;">$${p.total || 0}</td>
+          <td>${estadoBadge(p.estado)}</td>
+          <td style="color:#64748b;font-size:12px;">#${String(p.id).slice(-6)}</td>
+        </tr>
+      `).join('');
+}
+
+function logout() {
+  localStorage.removeItem('rol');
+  window.location.href = '/login.html';
+}
+
+// Auto-refresh every 30 seconds
+setInterval(cargar, 30000);
+cargar();
+</script>
+
+</body>
+</html>

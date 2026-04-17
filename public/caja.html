@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Caja PRO</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      background: #f4f6f8;
+    }
+
+    h1 {
+      text-align: center;
+      background: #111;
+      color: white;
+      padding: 15px;
+      margin: 0;
+    }
+
+    .contenedor {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 10px;
+    }
+
+    .pedido {
+      width: 280px;
+      margin: 10px;
+      padding: 15px;
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .estado {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .pendiente { color: red; }
+    .preparacion { color: orange; }
+    .listo { color: green; }
+
+    .por-cobrar {
+      background: #dc2626;
+      color: white;
+    }
+
+    .por-cobrar h2, .por-cobrar p {
+      color: white;
+    }
+
+    .pagado { color: gray; }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn-cobrar {
+      background: green;
+      color: white;
+    }
+
+    .vacio {
+      text-align: center;
+      padding: 50px;
+      font-size: 20px;
+      color: gray;
+    }
+
+    .detalle-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin: 3px 0;
+    }
+
+    .pedido.detalles .pedido-header {
+      border-bottom: 1px solid #eee;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+    }
+  </style>
+
+</head>
+<body>
+
+<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px 0 16px;">
+  <h1 style="margin:0;">💵 Caja</h1>
+  <button class="btn-logout" onclick="logout()">Salir</button>
+</div>
+
+<div id="pedidos" class="contenedor"></div>
+
+<script>
+function cargarPedidos() {
+  fetch("/data")
+    .then(res => res.json())
+    .then(data => {
+
+      let html = "";
+
+      if (data.pedidos.length === 0) {
+        html = `<div class="vacio">No hay pedidos aún</div>`;
+      } else {
+
+        data.pedidos.forEach(pedido => {
+          if (pedido.estado === "pagado") return;
+          if (pedido.estado === "pendiente" || pedido.estado === "en preparación") return;
+
+          let clase = "listo";
+          let esPorCobrar = false;
+
+          if (pedido.estado === "listo" || pedido.estado === "recogido") {
+            clase = "por-cobrar";
+            esPorCobrar = true;
+          }
+
+          const items = data.detalle.filter(d => d.pedido_id === pedido.id);
+          let detalleHTML = "";
+          items.forEach(i => {
+            const producto = data.productos.find(p => p.nombre === i.producto);
+            const precio = producto ? producto.precio : 0;
+            const subtotal = precio * i.cantidad;
+            detalleHTML += `
+              <div class="detalle-item">
+                <span>${i.producto} x${i.cantidad}</span>
+                <span>$${subtotal}</span>
+              </div>
+            `;
+          });
+
+          const label = esPorCobrar ? "💰 COBRAR" : pedido.estado.toUpperCase();
+
+          html += `
+            <div class="pedido ${clase}">
+              <div class="pedido-header">
+                <h2>${pedido.mesa}</h2>
+                <p class="estado">${label}</p>
+              </div>
+
+              <div class="detalle">${detalleHTML}</div>
+
+              <p><strong>Total:</strong> $${pedido.total || 0}</p>
+
+              ${
+                esPorCobrar
+                ? `<button class="btn-cobrar" onclick="cobrar(${pedido.id})">
+                    🧾 Cobrar e Imprimir
+                  </button>`
+                : ""
+              }
+
+            </div>
+          `;
+        });
+
+      }
+
+      document.getElementById("pedidos").innerHTML = html;
+    });
+}
+
+function cobrar(id) {
+  fetch("/estado", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ id, estado: "pagado" })
+  }).then(() => {
+    window.open(`/ticket.html?id=${id}`, "_blank");
+  });
+}
+
+function logout() {
+  localStorage.removeItem("rol");
+  window.location.href = "/login.html";
+}
+
+setInterval(cargarPedidos, 2000);
+cargarPedidos();
+
+const rol = localStorage.getItem("rol");
+if (!rol || rol !== "caja") {
+  localStorage.removeItem("rol");
+  window.location.href = "/login.html";
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+</head>
+<body>
+
+<div class="login-card">
+  <h2>Iniciar sesión</h2>
+  <input id="email" placeholder="Email" autocomplete="username">
+  <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+  <button id="btn-login">Entrar</button>
+
+  <div class="divider">o</div>
+
+  <h2>Crear usuario</h2>
+  <input id="newEmail" placeholder="Email" autocomplete="username">
+  <input id="newPassword" type="password" placeholder="Password" autocomplete="new-password">
+  <select id="role">
+    <option value="mesero">Mesero</option>
+    <option value="cocina">Cocina</option>
+    <option value="caja">Caja</option>
+  </select>
+  <button id="btn-register">Registrar usuario</button>
+
+  <div id="message" class="message"></div>
+</div>
+
+<script type="module">
+
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://oyurzisrjxxdqkxcxzae.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95dXJ6aXNyanh4ZHFreGN4emFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzI5NjQsImV4cCI6MjA5MTUwODk2NH0.LFZiRwZNTpNh07Zdx2XgruCUmJbSv8O0NnklXw8Px_o"
+);
+
+const savedRole = localStorage.getItem("rol");
+const { data: currentUser } = await supabase.auth.getUser();
+
+let isAlreadyLoggedIn = false;
+if (currentUser?.user && savedRole) {
+  isAlreadyLoggedIn = true;
+}
+
+const messageEl = document.getElementById("message");
+const btnLogin = document.getElementById("btn-login");
+const btnRegister = document.getElementById("btn-register");
+
+function getPageForRole(rol) {
+  if (rol === "mesero") return "/";
+  else if (rol === "cocina") return "/cocina.html";
+  else if (rol === "caja") return "/caja.html";
+  else if (rol === "admin") return "/admin.html";
+  return "/";
+}
+
+function showAlreadyLoggedIn() {
+  document.querySelector(".login-card").style.display = "none";
+  messageEl.textContent = "";
+  const roleMap = { mesero: "Mesero", cocina: "Cocina", caja: "Caja", admin: "Administrador" };
+  const roleName = roleMap[savedRole] || savedRole;
+  const pageUrl = getPageForRole(savedRole);
+  
+  messageEl.innerHTML = `
+    <div style="text-align:center; padding:20px; background:#047857; border-radius:8px; margin:20px 0;">
+      <p style="margin:0 0 10px; font-size:16px; font-weight:600;">Ya estás autenticado</p>
+      <p style="margin:0 0 20px; font-size:14px;">Rol: <strong>${roleName}</strong></p>
+      <div style="display:flex; gap:10px;">
+        <button style="flex:1; padding:10px; background:#fff; color:#047857; border:none; border-radius:6px; font-weight:600; cursor:pointer;" onclick="window.location.href='${pageUrl}'">
+          Continuar
+        </button>
+        <button style="flex:1; padding:10px; background:#dc2626; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;" onclick="cerrarSesion()">
+          Hacer logout
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+if (isAlreadyLoggedIn) {
+  showAlreadyLoggedIn();
+}
+
+function showMessage(text, isError = false) {
+  messageEl.textContent = text;
+  messageEl.style.color = isError ? "#b91c1c" : "#047857";
+}
+
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!email || !password) {
+    showMessage("Completa email y password para iniciar sesión.", true);
+    return;
+  }
+
+  btnLogin.disabled = true;
+  showMessage("Iniciando sesión...");
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      showMessage("Error de acceso: " + error.message, true);
+      return;
+    }
+
+    const user = data.user;
+    if (!user) {
+      showMessage("No se pudo obtener el usuario.", true);
+      return;
+    }
+
+    const { data: perfil, error: perfilError } = await supabase
+      .from("perfiles")
+      .select("rol")
+      .eq("id", user.id)
+      .single();
+
+    if (perfilError || !perfil) {
+      showMessage("No tiene rol asignado en la tabla perfiles.", true);
+      console.error("Perfil error:", perfilError);
+      return;
+    }
+
+    localStorage.setItem("rol", perfil.rol);
+
+    if (perfil.rol === "mesero") window.location.href = "/";
+    else if (perfil.rol === "cocina") window.location.href = "/cocina.html";
+    else if (perfil.rol === "caja") window.location.href = "/caja.html";
+    else showMessage("Rol desconocido: " + perfil.rol, true);
+  } catch (err) {
+    console.error(err);
+    showMessage("Error inesperado: " + (err.message || err), true);
+  } finally {
+    btnLogin.disabled = false;
+  }
+}
+
+async function registerUser() {
+  const email = document.getElementById("newEmail").value.trim();
+  const password = document.getElementById("newPassword").value.trim();
+  const rol = document.getElementById("role").value;
+
+  if (!email || !password) {
+    showMessage("Completa email, password y rol para crear el usuario.", true);
+    return;
+  }
+
+  btnRegister.disabled = true;
+  showMessage("Creando usuario...");
+
+  const response = await fetch("/crear-usuario", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, rol })
+  });
+
+  const result = await response.json();
+  btnRegister.disabled = false;
+
+  if (!response.ok || result.error) {
+    showMessage("Error creando usuario: " + (result.message || JSON.stringify(result)), true);
+    return;
+  }
+
+  showMessage("Usuario creado. Ahora inicia sesión con tus credenciales.");
+}
+
+async function cerrarSesion() {
+  await supabase.auth.signOut();
+  localStorage.removeItem("rol");
+  location.reload();
+}
+
+btnLogin.addEventListener("click", login);
+btnRegister.addEventListener("click", registerUser);
+
+
+</script>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6fb;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-card {
+    width: min(420px, calc(100% - 32px));
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 18px 50px rgba(15,23,42,0.12);
+    padding: 32px;
+  }
+  h2 {
+    margin: 0 0 18px;
+    color: #111827;
+    font-size: 24px;
+  }
+  input, select, button {
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  button:disabled {
+    background: #9ca3af;
+    cursor: default;
+  }
+  .divider {
+    text-align: center;
+    color: #6b7280;
+    margin: 14px 0;
+  }
+  .message {
+    margin-top: 8px;
+    min-height: 20px;
+    font-size: 14px;
+  }
+</style>
+
+</body>
+</html>

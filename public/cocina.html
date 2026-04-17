@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Cocina PRO</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      background: #1e1e1e;
+      color: white;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 15px;
+      margin: 0;
+      background: black;
+    }
+
+    .contenedor {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 10px;
+    }
+
+    .pedido {
+      width: 300px;
+      margin: 10px;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .pendiente {
+      background: #d32f2f;
+    }
+
+    .preparacion {
+      background: #f57c00;
+    }
+
+    .listo {
+      background: #388e3c;
+    }
+
+    h2 {
+      margin: 0 0 10px 0;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn-prep {
+      background: #ff9800;
+      color: black;
+    }
+
+    .btn-listo {
+      background: #4caf50;
+      color: white;
+    }
+
+    .btn-recogido {
+      background: #2196f3;
+      color: white;
+    }
+  </style>
+
+</head>
+<body>
+
+<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px 0 16px;">
+  <h1 style="margin:0;">🍳 Pantalla de Cocina</h1>
+  <button class="btn-logout" onclick="logout()">Salir</button>
+</div>
+
+<div class="contenedor" id="pedidos"></div>
+
+<script>
+function cargarPedidos() {
+  fetch("/data")
+    .then(res => res.json())
+    .then(data => {
+
+      let html = "";
+
+      data.pedidos.forEach(pedido => {
+        if (pedido.estado === "recogido" || pedido.estado === "pagado") return;
+
+        let clase = "pendiente";
+        if (pedido.estado === "en preparación") clase = "preparacion";
+        if (pedido.estado === "listo") clase = "listo";
+
+        let items = data.detalle.filter(d => d.pedido_id === pedido.id);
+
+        html += `
+          <div class="pedido ${clase}">
+            <h2>${pedido.mesa}</h2>
+            <p><strong>${pedido.estado.toUpperCase()}</strong></p>
+
+            <ul>
+              ${items.map(i => `<li>${i.producto} x${i.cantidad}</li>`).join("")}
+            </ul>
+
+            ${
+              pedido.estado === "pendiente"
+              ? `<button class="btn-prep" onclick="cambiarEstado(${pedido.id}, 'en preparación')">
+                  👨‍🍳 Preparando
+                </button>`
+              : ""
+            }
+
+            ${
+              pedido.estado === "en preparación"
+              ? `<button class="btn-listo" onclick="cambiarEstado(${pedido.id}, 'listo')">
+                  ✅ Listo
+                </button>`
+              : ""
+            }
+
+            ${
+              pedido.estado === "listo"
+              ? `<button class="btn-recogido" onclick="cambiarEstado(${pedido.id}, 'recogido')">
+                  📤 Recogido
+                </button>`
+              : ""
+            }
+          </div>
+        `;
+      });
+
+      document.getElementById("pedidos").innerHTML = html || '<p style="text-align:center;width:100%;padding:50px;">No hay pedidos</p>';
+    });
+}
+
+function cambiarEstado(id, estado) {
+  fetch("/estado", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ id, estado })
+  });
+}
+
+function logout() {
+  localStorage.removeItem("rol");
+  window.location.href = "/login.html";
+}
+
+setInterval(cargarPedidos, 2000);
+cargarPedidos();
+
+const rol = localStorage.getItem("rol");
+if (!rol || rol !== "cocina") {
+  localStorage.removeItem("rol");
+  window.location.href = "/login.html";
+}
+</script>
+</body>
+</html>

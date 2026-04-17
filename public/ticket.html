@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket — Los Taínos</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #f3f4f6;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px;
+      min-height: 100vh;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .ticket {
+      background: white;
+      width: 320px;
+      padding: 0;
+      border-radius: 4px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      overflow: hidden;
+    }
+
+    /* Zigzag top */
+    .ticket-top {
+      background: #111827;
+      padding: 24px 20px 16px;
+      text-align: center;
+    }
+
+    .ticket-restaurant {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f59e0b;
+      letter-spacing: 1px;
+    }
+
+    .ticket-subtitle {
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* Zigzag divider */
+    .zigzag {
+      background: linear-gradient(135deg, #111827 25%, transparent 25%) -10px 0,
+                  linear-gradient(225deg, #111827 25%, transparent 25%) -10px 0,
+                  linear-gradient(315deg, #111827 25%, transparent 25%),
+                  linear-gradient(45deg,  #111827 25%, transparent 25%);
+      background-size: 20px 10px;
+      background-color: white;
+      height: 10px;
+    }
+
+    .ticket-body { padding: 16px 20px; }
+
+    .ticket-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #6b7280;
+      margin-bottom: 14px;
+    }
+
+    .ticket-mesa {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 16px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .ticket-divider {
+      border: none;
+      border-top: 1px dashed #d1d5db;
+      margin: 12px 0;
+    }
+
+    .ticket-items {}
+
+    .ticket-item {
+      margin-bottom: 10px;
+    }
+
+    .ticket-item-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .ticket-item-sub {
+      font-size: 10px;
+      color: #9ca3af;
+      margin-top: 1px;
+    }
+
+    .ticket-total-section {
+      background: #f9fafb;
+      border: 1px dashed #d1d5db;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-top: 14px;
+    }
+
+    .subtotal-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+      border-top: 1px dashed #d1d5db;
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+
+    .total-row .amount { color: #059669; }
+
+    .ticket-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 10px;
+      color: #9ca3af;
+      letter-spacing: 1px;
+      line-height: 1.8;
+    }
+
+    .ticket-footer .thanks {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+
+    /* Print button — hidden on print */
+    .print-btn-wrap {
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .btn-print {
+      background: #111827;
+      color: #f59e0b;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 32px;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+
+    .btn-print:hover {
+      background: #1f2937;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .ticket { box-shadow: none; border-radius: 0; }
+      .print-btn-wrap { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div>
+  <div class="ticket" id="ticket">
+    <div class="ticket-top">
+      <div class="ticket-restaurant">🍽️ LOS TAÍNOS</div>
+      <div class="ticket-subtitle">Sistema POS · Comprobante</div>
+    </div>
+    <div class="zigzag"></div>
+    <div class="ticket-body">
+      <div class="ticket-meta">
+        <span id="ticket-fecha">—</span>
+        <span id="ticket-hora">—</span>
+      </div>
+      <div class="ticket-mesa" id="ticket-mesa">— — —</div>
+      <hr class="ticket-divider">
+      <div class="ticket-items" id="ticket-items">
+        <p style="text-align:center; color:#9ca3af; font-size:12px;">Cargando...</p>
+      </div>
+      <div class="ticket-total-section" id="ticket-total-section" style="display:none;">
+        <div class="subtotal-row">
+          <span>Subtotal</span>
+          <span id="ticket-subtotal">$0</span>
+        </div>
+        <div class="subtotal-row">
+          <span>ITBIS (18%)</span>
+          <span id="ticket-itbis">$0</span>
+        </div>
+        <div class="total-row">
+          <span>TOTAL</span>
+          <span class="amount" id="ticket-total">$0</span>
+        </div>
+      </div>
+      <div class="ticket-footer">
+        <div class="thanks">¡Gracias por su preferencia!</div>
+        <div>Vuelva pronto · Los Taínos</div>
+        <div id="ticket-num">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="print-btn-wrap">
+    <button class="btn-print" onclick="window.print()">🖨️ IMPRIMIR</button>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const pedidoId = Number(params.get('id'));
+
+const now = new Date();
+document.getElementById('ticket-fecha').textContent = now.toLocaleDateString('es-DO');
+document.getElementById('ticket-hora').textContent = now.toLocaleTimeString('es-DO', { hour12: false });
+document.getElementById('ticket-num').textContent = '#' + String(pedidoId).slice(-6);
+
+fetch('/data')
+  .then(res => res.json())
+  .then(data => {
+    const pedido = (data.pedidos || []).find(p => p.id === pedidoId);
+    const items  = (data.detalle || []).filter(d => d.pedido_id === pedidoId);
+
+    if (!pedido) {
+      document.getElementById('ticket-items').innerHTML = '<p style="text-align:center;color:#ef4444;">Pedido no encontrado.</p>';
+      return;
+    }
+
+    document.getElementById('ticket-mesa').textContent = '🪑 ' + pedido.mesa;
+
+    let subtotalVal = 0;
+    document.getElementById('ticket-items').innerHTML = items.map(i => {
+      const prod = (data.productos || []).find(p => p.nombre === i.producto);
+      const precio = prod?.precio || 0;
+      const sub = precio * i.cantidad;
+      subtotalVal += sub;
+      return `<div class="ticket-item">
+        <div class="ticket-item-top">
+          <span>${i.producto}</span>
+          <span>$${sub}</span>
+        </div>
+        <div class="ticket-item-sub">x${i.cantidad} unid. @ $${precio} c/u</div>
+      </div>`;
+    }).join('');
+
+    const itbis = Math.round(subtotalVal * 0.18);
+    const total = pedido.total || subtotalVal;
+
+    document.getElementById('ticket-subtotal').textContent = '$' + subtotalVal;
+    document.getElementById('ticket-itbis').textContent = '$' + itbis;
+    document.getElementById('ticket-total').textContent = '$' + total;
+    document.getElementById('ticket-total-section').style.display = 'block';
+  });
+</script>
+
+</body>
+</html>
