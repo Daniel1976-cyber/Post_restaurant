@@ -230,7 +230,13 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const SUPABASE_URL = "https://oyurzisrjxxdqkxcxzae.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95dXJ6aXNyanh4ZHFreGN4emFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzI5NjQsImV4cCI6MjA5MTUwODk2NH0.LFZiRwZNTpNh07Zdx2XgruCUmJbSv8O0NnklXw8Px_o";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
 const params = new URLSearchParams(window.location.search);
 const pedidoId = Number(params.get('id'));
 
@@ -239,42 +245,48 @@ document.getElementById('ticket-fecha').textContent = now.toLocaleDateString('es
 document.getElementById('ticket-hora').textContent = now.toLocaleTimeString('es-DO', { hour12: false });
 document.getElementById('ticket-num').textContent = '#' + String(pedidoId).slice(-6);
 
-fetch('/data')
-  .then(res => res.json())
-  .then(data => {
-    const pedido = (data.pedidos || []).find(p => p.id === pedidoId);
-    const items  = (data.detalle || []).filter(d => d.pedido_id === pedidoId);
+async function init() {
+  const { data: pedidos } = await supabase.from("pedidos").select("*");
+  const { data: detalle } = await supabase.from("detalle").select("*");
+  const { data: productos } = await supabase.from("productos").select("*");
 
-    if (!pedido) {
-      document.getElementById('ticket-items').innerHTML = '<p style="text-align:center;color:#ef4444;">Pedido no encontrado.</p>';
-      return;
-    }
+  const pedido = (pedidos || []).find(p => p.id === pedidoId);
+  const items  = (detalle || []).filter(d => d.pedido_id === pedidoId);
 
-    document.getElementById('ticket-mesa').textContent = '🪑 ' + pedido.mesa;
+  if (!pedido) {
+    document.getElementById('ticket-items').innerHTML = '<p style="text-align:center;color:#ef4444;">Pedido no encontrado.</p>';
+    return;
+  }
 
-    let subtotalVal = 0;
-    document.getElementById('ticket-items').innerHTML = items.map(i => {
-      const prod = (data.productos || []).find(p => p.nombre === i.producto);
-      const precio = prod?.precio || 0;
-      const sub = precio * i.cantidad;
-      subtotalVal += sub;
-      return `<div class="ticket-item">
+  document.getElementById('ticket-mesa').textContent = '🪑 ' + pedido.mesa;
+
+  let subtotalVal = 0;
+  document.getElementById('ticket-items').innerHTML = items.map(i => {
+    const prod = (productos || []).find(p => p.nombre === i.producto);
+    const precio = prod?.precio || 0;
+    const sub = precio * i.cantidad;
+    subtotalVal += sub;
+    return `
+      <div class="ticket-item">
         <div class="ticket-item-top">
           <span>${i.producto}</span>
           <span>$${sub}</span>
         </div>
         <div class="ticket-item-sub">x${i.cantidad} unid. @ $${precio} c/u</div>
-      </div>`;
-    }).join('');
+      </div>
+    `;
+  }).join('');
 
-    const itbis = Math.round(subtotalVal * 0.18);
-    const total = pedido.total || subtotalVal;
+  const itbis = Math.round(subtotalVal * 0.18);
+  const total = pedido.total || subtotalVal;
 
-    document.getElementById('ticket-subtotal').textContent = '$' + subtotalVal;
-    document.getElementById('ticket-itbis').textContent = '$' + itbis;
-    document.getElementById('ticket-total').textContent = '$' + total;
-    document.getElementById('ticket-total-section').style.display = 'block';
-  });
+  document.getElementById('ticket-subtotal').textContent = '$' + subtotalVal;
+  document.getElementById('ticket-itbis').textContent = '$' + itbis;
+  document.getElementById('ticket-total').textContent = '$' + total;
+  document.getElementById('ticket-total-section').style.display = 'block';
+}
+
+init();
 </script>
 
 </body>

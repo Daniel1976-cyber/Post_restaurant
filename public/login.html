@@ -156,7 +156,7 @@ async function registerUser() {
   btnRegister.disabled = true;
   showMessage("Creando usuario...");
 
-  const response = await fetch("/crear-usuario", {
+  const response = await fetch("/api/create-user", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, rol })

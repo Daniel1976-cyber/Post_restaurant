@@ -508,10 +508,20 @@ function toast(msg, warn = false) {
   }, 2500);
 }
 
-// ── CARGAR DATOS ──
+// ── CARGAR DATOS (Directo de Supabase) ──
 async function cargar() {
-  const res = await fetch('/data');
-  cachedData = await res.json();
+  const { data: pedidos } = await supabase.from("pedidos").select("*").order("id", { ascending: false });
+  const { data: detalle } = await supabase.from("detalle").select("*");
+  const { data: productos } = await supabase.from("productos").select("*");
+  const { data: mesas } = await supabase.from("mesas").select("*");
+  
+  cachedData = {
+    pedidos: pedidos || [],
+    detalle: detalle || [],
+    productos: productos || [],
+    mesas: mesas || []
+  };
+
   renderMesas(cachedData);
   renderMenu(cachedData);
   renderPedido(cachedData);
@@ -623,12 +633,15 @@ function renderPedido(data) {
 window.seleccionarMesa = async function(mesa) {
   mesaSeleccionada = mesa;
   document.getElementById('pedido-mesa').textContent = mesa;
-  const res = await fetch('/pedido', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mesa })
-  });
-  const data = await res.json();
+  
+  const { data, error } = await supabase
+    .from("pedidos")
+    .insert([{ id: Date.now(), mesa: mesa, estado: "pendiente", total: 0 }])
+    .select()
+    .single();
+
+  if (error) { toast('❌ Error al crear pedido: ' + error.message, true); return; }
+  
   pedidoId = data.id;
   cargar();
 };
@@ -644,41 +657,75 @@ window.agregar = async function(producto, el) {
   if (!pedidoId) { toast('⚠️ Selecciona una mesa primero', true); return; }
   el.classList.add('flash');
   setTimeout(() => el.classList.remove('flash'), 350);
-  await fetch('/detalle', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pedido_id: pedidoId, producto, cantidad: 1 })
-  });
+
+  // Insertar detalle
+  const { error: errorDetalle } = await supabase.from("detalle").insert([{
+    pedido_id: pedidoId,
+    producto: producto,
+    cantidad: 1
+  }]);
+
+  if (errorDetalle) { toast('❌ Error: ' + errorDetalle.message, true); return; }
+
+  // Recalcular total del pedido
+  const { data: productos } = await supabase.from("productos").select("*").eq("nombre", producto).single();
+  const { data: pedido } = await supabase.from("pedidos").select("*").eq("id", pedidoId).single();
+  
+  const nuevoTotal = (pedido.total || 0) + (productos.precio * 1);
+  await supabase.from("pedidos").update({ total: nuevoTotal }).eq("id", pedidoId);
+
   toast('✅ ' + producto + ' agregado');
   cargar();
 };
 
 window.cambiarCantidad = async function(itemId, delta) {
-  await fetch('/cambiar-cantidad', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ itemId, delta })
-  });
+  const { data: item } = await supabase.from("detalle").select("*").eq("id", itemId).single();
+  if (!item) return;
+
+  const nuevaCant = item.cantidad + delta;
+  
+  if (nuevaCant <= 0) {
+    await supabase.from("detalle").delete().eq("id", itemId);
+  } else {
+    await supabase.from("detalle").update({ cantidad: nuevaCant }).eq("id", itemId);
+  }
+
+  // Recalcular total del pedido (más simple: cargar todo de nuevo)
+  const { data: items } = await supabase.from("detalle").select("*").eq("pedido_id", item.pedido_id);
+  let nuevoTotal = 0;
+  for (const i of (items || [])) {
+    const { data: p } = await supabase.from("productos").select("precio").eq("nombre", i.producto).single();
+    if (p) nuevoTotal += p.precio * i.cantidad;
+  }
+  await supabase.from("pedidos").update({ total: nuevoTotal }).eq("id", item.pedido_id);
+  
   cargar();
 };
 
 window.eliminarItem = async function(itemId) {
   if (!confirm('¿Eliminar este producto?')) return;
-  await fetch('/cambiar-cantidad', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ itemId, delta: -999 })
-  });
+  const { data: item } = await supabase.from("detalle").select("*").eq("id", itemId).single();
+  if (!item) return;
+
+  await supabase.from("detalle").delete().eq("id", itemId);
+
+  // Recalcular total
+  const { data: items } = await supabase.from("detalle").select("*").eq("pedido_id", item.pedido_id);
+  let nuevoTotal = 0;
+  for (const i of (items || [])) {
+    const { data: p } = await supabase.from("productos").select("precio").eq("nombre", i.producto).single();
+    if (p) nuevoTotal += p.precio * i.cantidad;
+  }
+  await supabase.from("pedidos").update({ total: nuevoTotal }).eq("id", item.pedido_id);
+  
   cargar();
 };
 
 window.enviarPedido = async function() {
   if (!pedidoId) return;
-  await fetch('/estado', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: pedidoId, estado: 'pendiente' })
-  });
+  const { error } = await supabase.from("pedidos").update({ estado: 'pendiente' }).eq("id", pedidoId);
+  if (error) { toast('❌ Error al enviar: ' + error.message, true); return; }
+
   toast('📤 Pedido enviado a cocina!', true);
   pedidoId = null;
   mesaSeleccionada = null;

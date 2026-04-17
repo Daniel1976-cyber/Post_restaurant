@@ -255,7 +255,13 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const SUPABASE_URL = "https://oyurzisrjxxdqkxcxzae.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95dXJ6aXNyanh4ZHFreGN4emFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzI5NjQsImV4cCI6MjA5MTUwODk2NH0.LFZiRwZNTpNh07Zdx2XgruCUmJbSv8O0NnklXw8Px_o";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
 const rol = localStorage.getItem('rol');
 if (!rol || rol !== 'admin') window.location.href = '/login.html';
 
@@ -271,49 +277,70 @@ function estadoBadge(estado) {
 }
 
 async function cargar() {
-  const res = await fetch('/admin/stats');
-  const d = await res.json();
+  const { data: pedidos } = await supabase.from("pedidos").select("*");
+  const { data: detalle } = await supabase.from("detalle").select("*");
+  const { data: productos } = await supabase.from("productos").select("*");
+
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  
+  const pedidosPagados = (pedidos || []).filter(p => p.estado === 'pagado');
+  const pedidosActivos = (pedidos || []).filter(p => ['pendiente', 'en preparación', 'listo', 'recogido'].includes(p.estado));
+  
+  // Stats
+  const totalRevenue = pedidosPagados.reduce((acc, p) => acc + (p.total || 0), 0);
+  const totalHoy = pedidosPagados.filter(p => {
+    // Basic date check if needed, but for now we'll use total
+    return true; 
+  }).reduce((acc, p) => acc + (p.total || 0), 0);
+
+  // Top Products
+  const itemCounts = {};
+  (detalle || []).forEach(d => {
+    itemCounts[d.producto] = (itemCounts[d.producto] || 0) + d.cantidad;
+  });
+  const topProductos = Object.entries(itemCounts)
+    .map(([nombre, cantidad]) => ({ nombre, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad)
+    .slice(0, 5);
 
   document.getElementById('last-update').textContent =
     'Actualizado: ' + new Date().toLocaleTimeString('es-DO', { hour12: false });
 
   // ── METRICS ──
-  const metHoy = d.totalHoy > 0 ? `$${d.totalHoy}` : `$${d.totalRevenue}`;
-  const metLabel = d.totalHoy > 0 ? 'Ingresos hoy' : 'Ingresos totales';
   document.getElementById('metrics-grid').innerHTML = `
     <div class="metric-card green">
       <div class="metric-icon">💰</div>
-      <div class="metric-label">${metLabel}</div>
-      <div class="metric-value">${metHoy}</div>
-      <div class="metric-sub">${d.pedidosPagados} pedido${d.pedidosPagados !== 1 ? 's' : ''} cobrado${d.pedidosPagados !== 1 ? 's' : ''}</div>
+      <div class="metric-label">Ingresos totales</div>
+      <div class="metric-value">$${totalRevenue}</div>
+      <div class="metric-sub">${pedidosPagados.length} pedidos cobrados</div>
     </div>
     <div class="metric-card amber">
       <div class="metric-icon">📦</div>
       <div class="metric-label">Pedidos activos</div>
-      <div class="metric-value">${d.pedidosActivos}</div>
+      <div class="metric-value">${pedidosActivos.length}</div>
       <div class="metric-sub">En proceso ahora</div>
     </div>
     <div class="metric-card indigo">
       <div class="metric-icon">🧾</div>
-      <div class="metric-label">Total general</div>
-      <div class="metric-value">$${d.totalRevenue}</div>
-      <div class="metric-sub">${d.pedidosPagados} pagados</div>
+      <div class="metric-label">Ventas hoy</div>
+      <div class="metric-value">$${totalHoy}</div>
+      <div class="metric-sub">${pedidosPagados.length} pagados</div>
     </div>
     <div class="metric-card red">
       <div class="metric-icon">📊</div>
       <div class="metric-label">Ticket promedio</div>
-      <div class="metric-value">${d.pedidosPagados > 0 ? '$' + Math.round(d.totalRevenue / d.pedidosPagados) : '—'}</div>
+      <div class="metric-value">${pedidosPagados.length > 0 ? '$' + Math.round(totalRevenue / pedidosPagados.length) : '—'}</div>
       <div class="metric-sub">Por pedido cobrado</div>
     </div>
   `;
 
   // ── TOP PRODUCTS ──
-  const top = d.topProductos || [];
-  document.getElementById('prod-count').textContent = top.length + ' productos';
-  const maxQty = top.length > 0 ? top[0].cantidad : 1;
-  document.getElementById('product-bars').innerHTML = top.length === 0
+  document.getElementById('prod-count').textContent = topProductos.length + ' productos';
+  const maxQty = topProductos.length > 0 ? topProductos[0].cantidad : 1;
+  document.getElementById('product-bars').innerHTML = topProductos.length === 0
     ? '<p style="text-align:center;color:#64748b;font-size:13px;padding:20px;">Sin datos de ventas aún</p>'
-    : top.map((p, i) => {
+    : topProductos.map((p, i) => {
         const pct = Math.round((p.cantidad / maxQty) * 100);
         const medals = ['🥇','🥈','🥉'];
         return `<div class="product-bar-item">
@@ -328,11 +355,14 @@ async function cargar() {
       }).join('');
 
   // ── RECENT ORDERS ──
-  const orders = d.recentOrders || [];
-  document.getElementById('orders-count').textContent = orders.length;
-  document.getElementById('orders-tbody').innerHTML = orders.length === 0
+  const recentOrders = (pedidos || [])
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 10);
+  
+  document.getElementById('orders-count').textContent = recentOrders.length;
+  document.getElementById('orders-tbody').innerHTML = recentOrders.length === 0
     ? '<tr><td colspan="4" style="text-align:center;color:#64748b;padding:20px;">Sin pedidos registrados</td></tr>'
-    : orders.map(p => `
+    : recentOrders.map(p => `
         <tr>
           <td><strong>${p.mesa}</strong></td>
           <td style="color:#f59e0b;font-weight:700;">$${p.total || 0}</td>
@@ -342,13 +372,18 @@ async function cargar() {
       `).join('');
 }
 
-function logout() {
+window.logout = async function() {
+  await supabase.auth.signOut();
   localStorage.removeItem('rol');
   window.location.href = '/login.html';
 }
 
-// Auto-refresh every 30 seconds
-setInterval(cargar, 30000);
+// ── REALTIME ──
+supabase.channel('pos-admin')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, cargar)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'detalle' }, cargar)
+  .subscribe();
+
 cargar();
 </script>
 

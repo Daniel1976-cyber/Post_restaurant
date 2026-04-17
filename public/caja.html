@@ -100,100 +100,95 @@
 
 <div id="pedidos" class="contenedor"></div>
 
-<script>
-function cargarPedidos() {
-  fetch("/data")
-    .then(res => res.json())
-    .then(data => {
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-      let html = "";
+const SUPABASE_URL = "https://oyurzisrjxxdqkxcxzae.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95dXJ6aXNyanh4ZHFreGN4emFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzI5NjQsImV4cCI6MjA5MTUwODk2NH0.LFZiRwZNTpNh07Zdx2XgruCUmJbSv8O0NnklXw8Px_o";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-      if (data.pedidos.length === 0) {
-        html = `<div class="vacio">No hay pedidos aún</div>`;
-      } else {
+// Auth check
+const { data: authData, error: authErr } = await supabase.auth.getUser();
+const rol = localStorage.getItem('rol');
+if (authErr || !authData.user || rol !== 'caja') {
+  localStorage.removeItem('rol');
+  window.location.href = '/login.html';
+}
+async function cargarPedidos() {
+  const { data: pedidos } = await supabase.from("pedidos").select("*").order("id", { ascending: false });
+  const { data: detalle } = await supabase.from("detalle").select("*");
+  const { data: productos } = await supabase.from("productos").select("*");
 
-        data.pedidos.forEach(pedido => {
-          if (pedido.estado === "pagado") return;
-          if (pedido.estado === "pendiente" || pedido.estado === "en preparación") return;
+  let html = "";
+  if (!pedidos || pedidos.length === 0) {
+    html = `<div class="vacio">No hay pedidos aún</div>`;
+  } else {
+    pedidos.forEach(pedido => {
+      if (pedido.estado === "pagado") return;
+      if (pedido.estado === "pendiente" || pedido.estado === "en preparación") return;
 
-          let clase = "listo";
-          let esPorCobrar = false;
-
-          if (pedido.estado === "listo" || pedido.estado === "recogido") {
-            clase = "por-cobrar";
-            esPorCobrar = true;
-          }
-
-          const items = data.detalle.filter(d => d.pedido_id === pedido.id);
-          let detalleHTML = "";
-          items.forEach(i => {
-            const producto = data.productos.find(p => p.nombre === i.producto);
-            const precio = producto ? producto.precio : 0;
-            const subtotal = precio * i.cantidad;
-            detalleHTML += `
-              <div class="detalle-item">
-                <span>${i.producto} x${i.cantidad}</span>
-                <span>$${subtotal}</span>
-              </div>
-            `;
-          });
-
-          const label = esPorCobrar ? "💰 COBRAR" : pedido.estado.toUpperCase();
-
-          html += `
-            <div class="pedido ${clase}">
-              <div class="pedido-header">
-                <h2>${pedido.mesa}</h2>
-                <p class="estado">${label}</p>
-              </div>
-
-              <div class="detalle">${detalleHTML}</div>
-
-              <p><strong>Total:</strong> $${pedido.total || 0}</p>
-
-              ${
-                esPorCobrar
-                ? `<button class="btn-cobrar" onclick="cobrar(${pedido.id})">
-                    🧾 Cobrar e Imprimir
-                  </button>`
-                : ""
-              }
-
-            </div>
-          `;
-        });
-
+      let clase = "listo";
+      let esPorCobrar = false;
+      if (pedido.estado === "listo" || pedido.estado === "recogido") {
+        clase = "por-cobrar";
+        esPorCobrar = true;
       }
 
-      document.getElementById("pedidos").innerHTML = html;
+      const items = (detalle || []).filter(d => d.pedido_id === pedido.id);
+      let detalleHTML = "";
+      items.forEach(i => {
+        const productData = (productos || []).find(p => p.nombre === i.producto);
+        const precio = productData ? productData.precio : 0;
+        const subtotal = precio * i.cantidad;
+        detalleHTML += `
+          <div class="detalle-item">
+            <span>${i.producto} x${i.cantidad}</span>
+            <span>$${subtotal}</span>
+          </div>
+        `;
+      });
+
+      const label = esPorCobrar ? "💰 COBRAR" : pedido.estado.toUpperCase();
+
+      html += `
+        <div class="pedido ${clase}">
+          <div class="pedido-header">
+            <h2>${pedido.mesa}</h2>
+            <p class="estado">${label}</p>
+          </div>
+          <div class="detalle">${detalleHTML}</div>
+          <p><strong>Total:</strong> $${pedido.total || 0}</p>
+          ${
+            esPorCobrar
+            ? `<button class="btn-cobrar" onclick="cobrar(${pedido.id})">🧾 Cobrar e Imprimir</button>`
+            : ""
+          }
+        </div>
+      `;
     });
+  }
+  document.getElementById("pedidos").innerHTML = html;
 }
 
-function cobrar(id) {
-  fetch("/estado", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ id, estado: "pagado" })
-  }).then(() => {
-    window.open(`/ticket.html?id=${id}`, "_blank");
-  });
+window.cobrar = async function(id) {
+  await supabase.from("pedidos").update({ estado: "pagado" }).eq("id", id);
+  window.open(`/ticket.html?id=${id}`, "_blank");
+  cargarPedidos();
 }
 
-function logout() {
+window.logout = async function() {
+  await supabase.auth.signOut();
   localStorage.removeItem("rol");
   window.location.href = "/login.html";
 }
 
-setInterval(cargarPedidos, 2000);
+// ── REALTIME ──
+supabase.channel('pos-caja')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, cargarPedidos)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'detalle' }, cargarPedidos)
+  .subscribe();
+
 cargarPedidos();
-
-const rol = localStorage.getItem("rol");
-if (!rol || rol !== "caja") {
-  localStorage.removeItem("rol");
-  window.location.href = "/login.html";
-}
 </script>
 </body>
 </html>
