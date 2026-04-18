@@ -745,8 +745,8 @@ supabase.channel('pos-mesero')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'detalle' }, cargar)
   .subscribe();
 
-// Fallback polling cada 4s
-setInterval(cargar, 4000);
+// Fallback polling cada 60s (Sincronización principal es vía Realtime)
+setInterval(cargar, 60000);
 cargar();
 </script>
 </body>
