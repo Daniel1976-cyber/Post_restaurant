@@ -12,17 +12,6 @@
   <input id="password" type="password" placeholder="Password" autocomplete="current-password">
   <button id="btn-login">Entrar</button>
 
-  <div class="divider">o</div>
-
-  <h2>Crear usuario</h2>
-  <input id="newEmail" placeholder="Email" autocomplete="username">
-  <input id="newPassword" type="password" placeholder="Password" autocomplete="new-password">
-  <select id="role">
-    <option value="mesero">Mesero</option>
-    <option value="cocina">Cocina</option>
-    <option value="caja">Caja</option>
-  </select>
-  <button id="btn-register">Registrar usuario</button>
 
   <div id="message" class="message"></div>
 </div>
@@ -143,35 +132,6 @@ async function login() {
   }
 }
 
-async function registerUser() {
-  const email = document.getElementById("newEmail").value.trim();
-  const password = document.getElementById("newPassword").value.trim();
-  const rol = document.getElementById("role").value;
-
-  if (!email || !password) {
-    showMessage("Completa email, password y rol para crear el usuario.", true);
-    return;
-  }
-
-  btnRegister.disabled = true;
-  showMessage("Creando usuario...");
-
-  const response = await fetch("/api/create-user", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, rol })
-  });
-
-  const result = await response.json();
-  btnRegister.disabled = false;
-
-  if (!response.ok || result.error) {
-    showMessage("Error creando usuario: " + (result.message || JSON.stringify(result)), true);
-    return;
-  }
-
-  showMessage("Usuario creado. Ahora inicia sesión con tus credenciales.");
-}
 
 async function cerrarSesion() {
   await supabase.auth.signOut();
@@ -180,7 +140,7 @@ async function cerrarSesion() {
 }
 
 btnLogin.addEventListener("click", login);
-btnRegister.addEventListener("click", registerUser);
+btnRegister.style.display = "none"; // Eliminar referencia interna
 
 
 </script>
