@@ -746,6 +746,7 @@ supabase.channel('pos-mesero')
   .subscribe();
 
 // Fallback polling cada 60s (Sincronización principal es vía Realtime)
+// Sincronización proactiva cada 60s (Realtime se encarga del resto)
 setInterval(cargar, 60000);
 cargar();
 </script>
