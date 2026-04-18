@@ -244,6 +244,10 @@ app.get("/admin/stats", async (req, res) => {
 // ================================
 // 🚀 INICIAR SERVIDOR
 // ================================
-app.listen(PORT, () => {
-  console.log(`\n🍽️  Los Taínos POS corriendo en http://localhost:${PORT}\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n🍽️  Los Taínos POS corriendo en http://localhost:${PORT}\n`);
+  });
+}
+
+module.exports = app;
