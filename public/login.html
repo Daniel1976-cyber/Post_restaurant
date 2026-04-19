@@ -123,6 +123,7 @@ async function login() {
     if (perfil.rol === "mesero") window.location.href = "/mesero.html";
     else if (perfil.rol === "cocina") window.location.href = "/cocina.html";
     else if (perfil.rol === "caja") window.location.href = "/caja.html";
+    else if (perfil.rol === "admin") window.location.href = "/admin.html";
     else showMessage("Rol desconocido: " + perfil.rol, true);
   } catch (err) {
     console.error(err);
