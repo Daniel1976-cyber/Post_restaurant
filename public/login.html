@@ -169,6 +169,9 @@ btnLogin.addEventListener("click", login);
     border-radius: 16px;
     box-shadow: 0 18px 50px rgba(15,23,42,0.12);
     padding: 32px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.5s ease;
   }
   h2 {
     margin: 0 0 18px;
@@ -182,6 +185,7 @@ btnLogin.addEventListener("click", login);
     border: 1px solid #d1d5db;
     border-radius: 10px;
     font-size: 14px;
+    transition: all 0.2s;
   }
   button {
     background: #2563eb;
@@ -190,9 +194,26 @@ btnLogin.addEventListener("click", login);
     cursor: pointer;
     font-weight: 700;
   }
+  button:hover {
+    background: #1d4ed8;
+  }
   button:disabled {
     background: #9ca3af;
     cursor: default;
+  }
+  .btn-primary {
+    background: #2563eb;
+    color: white;
+    border: none;
+  }
+  .btn-outline {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid #fee2e2;
+  }
+  .btn-outline:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
   }
   .divider {
     text-align: center;
