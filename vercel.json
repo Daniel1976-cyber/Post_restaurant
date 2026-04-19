@@ -14,7 +14,7 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/public/login.html"
+      "destination": "/login.html"
     },
     {
       "source": "/(config|pedido|detalle|estado|data|cambiar-cantidad|crear-usuario|crear-admin|admin/stats)",
@@ -22,7 +22,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/public/$1"
+      "destination": "/$1"
     }
   ],
   "cleanUrls": true
