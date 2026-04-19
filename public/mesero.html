@@ -428,6 +428,48 @@
       from { opacity: 1; transform: translateX(0); }
       to { opacity: 0; transform: translateX(20px); }
     }
+
+    /* ── RESPONSIVE MOBILE LAYOUT ── */
+    @media (max-width: 900px) {
+      .container {
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .panel {
+        flex: none;
+        overflow: visible;
+      }
+      .panel-body {
+        overflow: visible;
+      }
+      /* Mesas: Horizontal scroll */
+      .panel-mesas {
+        border-right: none;
+        border-bottom: 3px solid var(--surface);
+      }
+      .mesa-grid {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        gap: 12px;
+      }
+      .mesa-card {
+        min-width: 110px;
+        flex-shrink: 0;
+      }
+      /* Productos: Default vertical */
+      .panel-productos {
+        border-right: none;
+        border-bottom: 3px solid var(--surface);
+        min-height: 400px;
+      }
+      /* Pedido: Stays at bottom */
+      .panel-pedido {
+        min-height: 400px;
+        border-top: 1px solid var(--danger); /* Just to separate visually if needed, though colors adapt */
+      }
+    }
   </style>
 </head>
 <body>
