@@ -38,11 +38,11 @@ const messageEl = document.getElementById("message");
 const btnLogin = document.getElementById("btn-login");
 
 function getPageForRole(rol) {
-  if (rol === "mesero") return "/";
+  if (rol === "mesero") return "/mesero.html";
   else if (rol === "cocina") return "/cocina.html";
   else if (rol === "caja") return "/caja.html";
   else if (rol === "admin") return "/admin.html";
-  return "/";
+  return "/mesero.html";
 }
 
 function showAlreadyLoggedIn() {
