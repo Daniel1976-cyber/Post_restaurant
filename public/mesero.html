@@ -434,40 +434,34 @@
       .container {
         display: flex;
         flex-direction: column;
-        overflow-y: auto;
+        overflow: hidden;
       }
-      .panel {
-        flex: none;
-        overflow: visible;
-      }
-      .panel-body {
-        overflow: visible;
-      }
-      /* Mesas: Horizontal scroll */
       .panel-mesas {
         border-right: none;
-        border-bottom: 3px solid var(--surface);
+        border-bottom: 1px solid var(--border);
+        flex: none; /* Just big enough for the horizontal row */
       }
       .mesa-grid {
         display: flex;
         overflow-x: auto;
-        padding-bottom: 10px;
-        gap: 12px;
+        padding-bottom: 2px;
+        gap: 8px;
+        flex-wrap: nowrap;
       }
       .mesa-card {
-        min-width: 110px;
-        flex-shrink: 0;
+        min-width: 90px;
+        height: 70px;
       }
-      /* Productos: Default vertical */
       .panel-productos {
         border-right: none;
-        border-bottom: 3px solid var(--surface);
-        min-height: 400px;
+        border-bottom: 2px solid var(--border);
+        flex: 1; /* Takes middle space */
+        min-height: 0; /* Important for flex child scrolling */
       }
-      /* Pedido: Stays at bottom */
       .panel-pedido {
-        min-height: 400px;
-        border-top: 1px solid var(--danger); /* Just to separate visually if needed, though colors adapt */
+        flex: none;
+        height: 45vh; /* Takes bottom 45% of screen */
+        border-top: none;
       }
     }
   </style>
