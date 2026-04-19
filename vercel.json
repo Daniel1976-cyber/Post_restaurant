@@ -17,7 +17,7 @@
       "destination": "/login.html"
     },
     {
-      "source": "/(config|pedido|detalle|estado|data|cambiar-cantidad|crear-usuario|crear-admin|admin/stats)",
+      "source": "/(config|pedido|detalle|estado|data|cambiar-cantidad|crear-usuario|crear-admin|admin/stats|admin/usuarios|admin/usuarios/:id|admin/productos|admin/productos/:id|admin/mesas|admin/mesas/:id)",
       "destination": "/server.js"
     },
     {

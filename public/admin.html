@@ -29,9 +29,7 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-    }
-
-    /* NAVBAR */
+        /* NAVBAR */
     .navbar {
       display: flex;
       align-items: center;
@@ -55,8 +53,38 @@
     .btn-logout { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted2); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
     .btn-logout:hover { background: rgba(239,68,68,0.1); color: #fca5a5; border-color: rgba(239,68,68,0.3); }
 
+    /* TABS */
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--muted2);
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+    .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .tab-btn.active { 
+      color: var(--accent); 
+      border-bottom-color: var(--accent); 
+      background: rgba(245,158,11,0.05);
+    }
+
     /* PAGE */
     .page { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
     .page-title {
       font-size: 24px;
@@ -65,6 +93,39 @@
     }
 
     .page-subtitle { font-size: 14px; color: var(--muted2); margin-bottom: 28px; }
+
+    /* FORM & INPUTS */
+    .admin-form {
+      background: var(--surface2);
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 30px;
+    }
+    .form-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 12px; color: var(--muted2); font-weight: 500; }
+    .form-group input, .form-group select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    .btn-action {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-action:hover { background: var(--accent2); transform: translateY(-1px); }
 
     /* METRIC CARDS */
     .metrics-grid {
@@ -126,6 +187,7 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       overflow: hidden;
+      margin-bottom: 24px;
     }
 
     .section-header {
@@ -162,6 +224,23 @@
     .product-bar-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
     .product-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #fbbf24); border-radius: 4px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
+    /* MANAGEMENT TABLES */
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th {
+      text-align: left;
+      font-size: 11px;
+      color: var(--muted2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-table td { padding: 14px 20px; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .btn-delete { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .btn-delete:hover { background: #ef4444; color: #fff; }
+
     /* ORDERS TABLE */
     .orders-table { width: 100%; border-collapse: collapse; }
     .orders-table th {
@@ -196,6 +275,7 @@
     .loading { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+ }
   </style>
 </head>
 <body>
@@ -210,48 +290,143 @@
 </nav>
 
 <div class="page">
-  <div class="page-title">Dashboard de Ventas</div>
-  <div class="page-subtitle">Estadísticas generales del restaurante Los Taínos</div>
+  <div class="page-title">Panel de Administración</div>
+  <div class="page-subtitle">Gestiona usuarios, menú, mesas y visualiza estadísticas</div>
 
-  <!-- METRICS -->
-  <div class="metrics-grid" id="metrics-grid">
-    <div class="loading"><div class="spinner"></div><br>Cargando métricas...</div>
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('stats')">📊 Estadísticas</button>
+    <button class="tab-btn" onclick="switchTab('users')">👥 Usuarios</button>
+    <button class="tab-btn" onclick="switchTab('menu')">🍽️ Menú</button>
+    <button class="tab-btn" onclick="switchTab('tables')">🪑 Mesas</button>
   </div>
 
-  <!-- CONTENT -->
-  <div class="content-grid">
-    <!-- TOP PRODUCTS -->
-    <div class="section-card">
-      <div class="section-header">
-        <div class="section-title">🏆 Productos Más Vendidos</div>
-        <span class="section-count" id="prod-count">—</span>
+  <!-- TAB: STATS -->
+  <div id="tab-stats" class="tab-content active">
+    <div class="metrics-grid" id="metrics-grid">
+      <div class="loading"><div class="spinner"></div><br>Cargando métricas...</div>
+    </div>
+    <div class="content-grid">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">🏆 Productos Más Vendidos</div>
+          <span class="section-count" id="prod-count">—</span>
+        </div>
+        <div class="product-bar-list" id="product-bars">
+          <div class="loading">Cargando...</div>
+        </div>
       </div>
-      <div class="product-bar-list" id="product-bars">
-        <div class="loading">Cargando...</div>
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">📋 Pedidos Recientes</div>
+          <span class="section-count" id="orders-count">—</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="orders-table">
+            <thead>
+              <tr><th>Mesa</th><th>Total</th><th>Estado</th><th>ID</th></tr>
+            </thead>
+            <tbody id="orders-tbody">
+              <tr><td colspan="4" class="loading">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- RECENT ORDERS -->
+  <!-- TAB: USERS -->
+  <div id="tab-users" class="tab-content">
+    <div class="admin-form">
+      <div class="form-title">➕ Crear Nuevo Usuario</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="u-email" placeholder="ejemplo@correo.com">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="u-pass" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>Rol</label>
+          <select id="u-role">
+            <option value="mesero">Mesero</option>
+            <option value="cocina">Cocina / Barra</option>
+            <option value="caja">Caja / Facturación</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <button class="btn-action" onclick="crearUsuario()">Crear Cuenta</button>
+      </div>
+    </div>
     <div class="section-card">
-      <div class="section-header">
-        <div class="section-title">📋 Pedidos Recientes</div>
-        <span class="section-count" id="orders-count">—</span>
+      <div class="section-header"><div class="section-title">👥 Personal del Restaurante</div></div>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Email</th><th>Rol</th><th>Creado</th><th>Acción</th></tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: MENU -->
+  <div id="tab-menu" class="tab-content">
+    <div class="admin-form">
+      <div class="form-title">➕ Añadir Producto</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="p-name" placeholder="Ej: Mofongo de Pollo">
+        </div>
+        <div class="form-group">
+          <label>Precio ($)</label>
+          <input type="number" id="p-price" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Categoría</label>
+          <select id="p-cat">
+            <option value="Comida">Comida</option>
+            <option value="Bebida">Bebida</option>
+            <option value="Postre">Postre</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <button class="btn-action" onclick="guardarProducto()">Guardar</button>
       </div>
-      <div style="overflow-x:auto;">
-        <table class="orders-table">
-          <thead>
-            <tr>
-              <th>Mesa</th>
-              <th>Total</th>
-              <th>Estado</th>
-              <th>ID</th>
-            </tr>
-          </thead>
-          <tbody id="orders-tbody">
-            <tr><td colspan="4" class="loading">Cargando...</td></tr>
-          </tbody>
-        </table>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="section-title">🍽️ Gestión de Menú</div></div>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Acción</th></tr>
+        </thead>
+        <tbody id="menu-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: TABLES -->
+  <div id="tab-tables" class="tab-content">
+    <div class="admin-form">
+      <div class="form-title">➕ Añadir Mesa</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre o Número de Mesa</label>
+          <input type="text" id="m-name" placeholder="Ej: Mesa 15 o Terraza 2">
+        </div>
+        <button class="btn-action" onclick="crearMesa()">Añadir Mesa</button>
       </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="section-title">🪑 Mesas Configuradas</div></div>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Nombre</th><th>Acción</th></tr>
+        </thead>
+        <tbody id="tables-tbody"></tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -266,6 +441,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 const rol = localStorage.getItem('rol');
 if (!rol || rol !== 'admin') window.location.href = '/login.html';
 
+// --- TABS ---
+window.switchTab = function(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  
+  event.currentTarget.classList.add('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
+  
+  if (tabId === 'users') cargarUsuarios();
+  if (tabId === 'menu' || tabId === 'tables') cargar(); 
+};
+
 function estadoBadge(estado) {
   const map = {
     'pagado':       'badge-pagado',
@@ -277,25 +464,26 @@ function estadoBadge(estado) {
   return `<span class="estado-badge ${map[estado] || 'badge-pendiente'}">${estado}</span>`;
 }
 
+// --- DATA LOADING ---
+
 async function cargar() {
   const { data: pedidos } = await supabase.from("pedidos").select("*");
   const { data: detalle } = await supabase.from("detalle").select("*");
-  const { data: productos } = await supabase.from("productos").select("*");
+  const { data: productos } = await supabase.from("productos").select("*").order("nombre");
+  const { data: mesas } = await supabase.from("mesas").select("*").order("nombre");
 
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  
+  renderStats(pedidos, detalle, productos);
+  renderMenu(productos);
+  renderTables(mesas);
+}
+
+function renderStats(pedidos, detalle, productos) {
   const pedidosPagados = (pedidos || []).filter(p => p.estado === 'pagado');
   const pedidosActivos = (pedidos || []).filter(p => ['pendiente', 'en preparación', 'listo', 'recogido'].includes(p.estado));
   
-  // Stats
   const totalRevenue = pedidosPagados.reduce((acc, p) => acc + (p.total || 0), 0);
-  const totalHoy = pedidosPagados.filter(p => {
-    // Basic date check if needed, but for now we'll use total
-    return true; 
-  }).reduce((acc, p) => acc + (p.total || 0), 0);
+  const totalHoy = pedidosPagados.reduce((acc, p) => acc + (p.total || 0), 0);
 
-  // Top Products
   const itemCounts = {};
   (detalle || []).forEach(d => {
     itemCounts[d.producto] = (itemCounts[d.producto] || 0) + d.cantidad;
@@ -308,7 +496,6 @@ async function cargar() {
   document.getElementById('last-update').textContent =
     'Actualizado: ' + new Date().toLocaleTimeString('es-DO', { hour12: false });
 
-  // ── METRICS ──
   document.getElementById('metrics-grid').innerHTML = `
     <div class="metric-card green">
       <div class="metric-icon">💰</div>
@@ -336,53 +523,165 @@ async function cargar() {
     </div>
   `;
 
-  // ── TOP PRODUCTS ──
   document.getElementById('prod-count').textContent = topProductos.length + ' productos';
   const maxQty = topProductos.length > 0 ? topProductos[0].cantidad : 1;
   document.getElementById('product-bars').innerHTML = topProductos.length === 0
     ? '<p style="text-align:center;color:#64748b;font-size:13px;padding:20px;">Sin datos de ventas aún</p>'
     : topProductos.map((p, i) => {
         const pct = Math.round((p.cantidad / maxQty) * 100);
-        const medals = ['🥇','🥈','🥉'];
         return `<div class="product-bar-item">
           <div class="product-bar-header">
-            <span class="product-bar-name">${medals[i] || '▪'} ${p.nombre}</span>
+            <span class="product-bar-name">${['🥇','🥈','🥉'][i] || '▪'} ${p.nombre}</span>
             <span class="product-bar-val">${p.cantidad} uds</span>
           </div>
-          <div class="product-bar-track">
-            <div class="product-bar-fill" style="width:${pct}%"></div>
-          </div>
+          <div class="product-bar-track"><div class="product-bar-fill" style="width:${pct}%"></div></div>
         </div>`;
       }).join('');
 
-  // ── RECENT ORDERS ──
-  const recentOrders = (pedidos || [])
-    .sort((a, b) => b.id - a.id)
-    .slice(0, 10);
-  
+  const recentOrders = (pedidos || []).sort((a,b) => b.id - a.id).slice(0, 10);
   document.getElementById('orders-count').textContent = recentOrders.length;
-  document.getElementById('orders-tbody').innerHTML = recentOrders.length === 0
-    ? '<tr><td colspan="4" style="text-align:center;color:#64748b;padding:20px;">Sin pedidos registrados</td></tr>'
-    : recentOrders.map(p => `
-        <tr>
-          <td><strong>${p.mesa}</strong></td>
-          <td style="color:#f59e0b;font-weight:700;">$${p.total || 0}</td>
-          <td>${estadoBadge(p.estado)}</td>
-          <td style="color:#64748b;font-size:12px;">#${String(p.id).slice(-6)}</td>
-        </tr>
-      `).join('');
+  document.getElementById('orders-tbody').innerHTML = recentOrders.map(p => `
+    <tr>
+      <td><strong>${p.mesa}</strong></td>
+      <td style="color:#f59e0b;font-weight:700;">$${p.total || 0}</td>
+      <td>${estadoBadge(p.estado)}</td>
+      <td style="color:#64748b;font-size:12px;">#${String(p.id).slice(-6)}</td>
+    </tr>
+  `).join('');
 }
+
+function renderMenu(productos) {
+  document.getElementById('menu-tbody').innerHTML = (productos || []).map(p => `
+    <tr>
+      <td><strong>${p.nombre}</strong></td>
+      <td><span style="color:var(--muted2)">${p.categoria}</span></td>
+      <td><span style="color:var(--success);font-weight:700;">$${p.precio}</span></td>
+      <td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Borrar</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderTables(mesas) {
+  document.getElementById('tables-tbody').innerHTML = (mesas || []).map(m => `
+    <tr>
+      <td><strong>${m.nombre}</strong></td>
+      <td><button class="btn-delete" onclick="eliminarMesa(${m.id})">Borrar</button></td>
+    </tr>
+  `).join('');
+}
+
+// --- USER MANAGEMENT ---
+
+async function cargarUsuarios() {
+  const res = await fetch("/admin/usuarios");
+  const users = await res.json();
+  document.getElementById('users-tbody').innerHTML = users.map(u => `
+    <tr>
+      <td>${u.email}</td>
+      <td><span class="nav-badge" style="background:rgba(255,255,255,0.05)">${u.rol}</span></td>
+      <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString()}</td>
+      <td><button class="btn-delete" onclick="eliminarUsuario('${u.id}')">Eliminar</button></td>
+    </tr>
+  `).join('');
+}
+
+window.crearUsuario = async function() {
+  const email = document.getElementById('u-email').value.trim();
+  const password = document.getElementById('u-pass').value.trim();
+  const rol = document.getElementById('u-role').value;
+  
+  if (!email || !password) return alert("Email y password obligatorios");
+  
+  const res = await fetch("/crear-usuario", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, rol })
+  });
+  
+  if (res.ok) {
+    alert("Usuario creado");
+    document.getElementById('u-email').value = '';
+    document.getElementById('u-pass').value = '';
+    cargarUsuarios();
+  } else {
+    const err = await res.json();
+    alert("Error: " + err.message);
+  }
+};
+
+window.eliminarUsuario = async function(id) {
+  if (!confirm("¿Seguro que deseas eliminar este empleado? Esta acción no se puede deshacer.")) return;
+  const res = await fetch(`/admin/usuarios/${id}`, { method: "DELETE" });
+  if (res.ok) cargarUsuarios();
+};
+
+// --- PRODUCT MANAGEMENT ---
+
+window.guardarProducto = async function() {
+  const nombre = document.getElementById('p-name').value.trim();
+  const precio = document.getElementById('p-price').value;
+  const categoria = document.getElementById('p-cat').value;
+
+  if (!nombre || !precio) return alert("Nombre y precio obligatorios");
+
+  const res = await fetch("/admin/productos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre, precio, categoria })
+  });
+
+  if (res.ok) {
+    alert("Producto guardado");
+    document.getElementById('p-name').value = '';
+    document.getElementById('p-price').value = '';
+    cargar();
+  }
+};
+
+window.eliminarProducto = async function(id) {
+  if (!confirm("¿Borrar este producto del menú?")) return;
+  const res = await fetch(`/admin/productos/${id}`, { method: "DELETE" });
+  if (res.ok) cargar();
+};
+
+// --- TABLE MANAGEMENT ---
+
+window.crearMesa = async function() {
+  const nombre = document.getElementById('m-name').value.trim();
+  if (!nombre) return alert("Nombre de mesa obligatorio");
+
+  const res = await fetch("/admin/mesas", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre })
+  });
+
+  if (res.ok) {
+    alert("Mesa añadida");
+    document.getElementById('m-name').value = '';
+    cargar();
+  }
+};
+
+window.eliminarMesa = async function(id) {
+  if (!confirm("¿Borrar esta mesa?")) return;
+  const res = await fetch(`/admin/mesas/${id}`, { method: "DELETE" });
+  if (res.ok) cargar();
+};
+
+// --- SYSTEM ---
 
 window.logout = async function() {
   await supabase.auth.signOut();
   localStorage.removeItem('rol');
   window.location.href = '/login.html';
-}
+};
 
-// ── REALTIME ──
 supabase.channel('pos-admin')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, cargar)
   .on('postgres_changes', { event: '*', schema: 'public', table: 'detalle' }, cargar)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, cargar)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, cargar)
   .subscribe();
 
 cargar();

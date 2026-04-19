@@ -237,8 +237,90 @@ app.get("/admin/stats", async (req, res) => {
     pedidosPagados: pagados.length,
     pedidosActivos: activos.length,
     topProductos,
-    recentOrders: all.slice(0, 20)
   });
+});
+
+// ================================
+// 👥 GESTIÓN DE USUARIOS (ADMIN)
+// ================================
+
+// Listar todos los usuarios
+app.get("/admin/usuarios", async (req, res) => {
+  try {
+    const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+    if (authError) return res.status(500).json(authError);
+
+    const { data: perfiles, error: perfError } = await supabaseAdmin.from("perfiles").select("*");
+    if (perfError) return res.status(500).json(perfError);
+
+    const usuarios = users.map(u => {
+      const perfil = perfiles.find(p => p.id === u.id);
+      return {
+        id: u.id,
+        email: u.email,
+        rol: perfil ? perfil.rol : 'sin rol',
+        created_at: u.created_at
+      };
+    });
+    res.json(usuarios);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Eliminar usuario
+app.delete("/admin/usuarios/:id", async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+  if (error) return res.status(500).json(error);
+  // También borrar el perfil por si acaso, aunque cascade debería funcionar si está configurado en Postgres
+  await supabaseAdmin.from("perfiles").delete().eq("id", id);
+  res.json({ ok: true });
+});
+
+// ================================
+// 📋 GESTIÓN DE PRODUCTOS (ADMIN)
+// ================================
+
+app.post("/admin/productos", async (req, res) => {
+  const { id, nombre, precio, categoria } = req.body;
+  const payload = { nombre, precio: Number(precio), categoria };
+  
+  let result;
+  if (id) {
+    result = await supabaseAdmin.from("productos").update(payload).eq("id", id);
+  } else {
+    // Si no tiene ID, es nuevo. Usamos insert. Pero productos tiene un trigger o es serial?
+    result = await supabaseAdmin.from("productos").insert([payload]);
+  }
+
+  if (result.error) return res.status(500).json(result.error);
+  res.json({ ok: true });
+});
+
+app.delete("/admin/productos/:id", async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabaseAdmin.from("productos").delete().eq("id", id);
+  if (error) return res.status(500).json(error);
+  res.json({ ok: true });
+});
+
+// ================================
+// 🪑 GESTIÓN DE MESAS (ADMIN)
+// ================================
+
+app.post("/admin/mesas", async (req, res) => {
+  const { nombre } = req.body;
+  const { error } = await supabaseAdmin.from("mesas").insert([{ nombre }]);
+  if (error) return res.status(500).json(error);
+  res.json({ ok: true });
+});
+
+app.delete("/admin/mesas/:id", async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabaseAdmin.from("mesas").delete().eq("id", id);
+  if (error) return res.status(500).json(error);
+  res.json({ ok: true });
 });
 
 // ================================
