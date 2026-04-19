@@ -26,16 +26,9 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95dXJ6aXNyanh4ZHFreGN4emFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzI5NjQsImV4cCI6MjA5MTUwODk2NH0.LFZiRwZNTpNh07Zdx2XgruCUmJbSv8O0NnklXw8Px_o"
 );
 
-const savedRole = localStorage.getItem("rol");
-const { data: currentUser } = await supabase.auth.getUser();
-
-let isAlreadyLoggedIn = false;
-if (currentUser?.user && savedRole) {
-  isAlreadyLoggedIn = true;
-}
-
 const messageEl = document.getElementById("message");
 const btnLogin = document.getElementById("btn-login");
+const loginCard = document.querySelector(".login-card");
 
 function getPageForRole(rol) {
   if (rol === "mesero") return "/mesero.html";
@@ -45,32 +38,47 @@ function getPageForRole(rol) {
   return "/mesero.html";
 }
 
-function showAlreadyLoggedIn() {
-  document.querySelector(".login-card").style.display = "none";
+async function init() {
+  const { data: currentUser } = await supabase.auth.getUser();
+  const savedRole = localStorage.getItem("rol");
+
+  if (currentUser?.user && savedRole) {
+    showAlreadyLoggedIn(savedRole);
+  } else {
+    // Si no está logueado, mostramos el login con una transición
+    loginCard.style.opacity = "1";
+    loginCard.style.transform = "translateY(0)";
+  }
+}
+
+function showAlreadyLoggedIn(rol) {
   messageEl.textContent = "";
   const roleMap = { mesero: "Mesero", cocina: "Cocina", caja: "Caja", admin: "Administrador" };
-  const roleName = roleMap[savedRole] || savedRole;
-  const pageUrl = getPageForRole(savedRole);
+  const roleName = roleMap[rol] || rol;
+  const pageUrl = getPageForRole(rol);
   
-  messageEl.innerHTML = `
-    <div style="text-align:center; padding:20px; background:#047857; border-radius:8px; margin:20px 0;">
-      <p style="margin:0 0 10px; font-size:16px; font-weight:600;">Ya estás autenticado</p>
-      <p style="margin:0 0 20px; font-size:14px;">Rol: <strong>${roleName}</strong></p>
-      <div style="display:flex; gap:10px;">
-        <button style="flex:1; padding:10px; background:#fff; color:#047857; border:none; border-radius:6px; font-weight:600; cursor:pointer;" onclick="window.location.href='${pageUrl}'">
-          Continuar
+  // En lugar de ocultar la card, reemplazamos su contenido interno
+  loginCard.innerHTML = `
+    <div style="text-align:center;">
+      <div style="font-size: 50px; margin-bottom: 20px;">👤</div>
+      <h2 style="margin-bottom: 10px;">Sesión Activa</h2>
+      <p style="color: #64748b; margin-bottom: 24px;">Hola, has iniciado sesión como <br><strong>${roleName}</strong></p>
+      
+      <div style="display:flex; flex-direction: column; gap:12px;">
+        <button class="btn-primary" onclick="window.location.href='${pageUrl}'">
+          Continuar a la App
         </button>
-        <button style="flex:1; padding:10px; background:#dc2626; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;" onclick="cerrarSesion()">
-          Hacer logout
+        <button class="btn-outline" onclick="cerrarSesion()">
+          Cerrar Sesión (Log out)
         </button>
       </div>
     </div>
   `;
+  loginCard.style.opacity = "1";
+  loginCard.style.transform = "translateY(0)";
 }
 
-if (isAlreadyLoggedIn) {
-  showAlreadyLoggedIn();
-}
+init();
 
 function showMessage(text, isError = false) {
   messageEl.textContent = text;
