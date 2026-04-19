@@ -120,7 +120,7 @@ async function login() {
 
     localStorage.setItem("rol", perfil.rol);
 
-    if (perfil.rol === "mesero") window.location.href = "/";
+    if (perfil.rol === "mesero") window.location.href = "/mesero.html";
     else if (perfil.rol === "cocina") window.location.href = "/cocina.html";
     else if (perfil.rol === "caja") window.location.href = "/caja.html";
     else showMessage("Rol desconocido: " + perfil.rol, true);
