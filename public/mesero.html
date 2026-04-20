@@ -432,14 +432,14 @@
     /* ── RESPONSIVE MOBILE LAYOUT ── */
     @media (max-width: 900px) {
       .container {
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+        display: block;
+        overflow-y: auto;
+        padding-bottom: 35vh; /* Space to scroll past the fixed footer */
       }
       .panel-mesas {
         border-right: none;
         border-bottom: 1px solid var(--border);
-        flex: none; /* Just big enough for the horizontal row */
+        height: auto;
       }
       .mesa-grid {
         display: flex;
@@ -454,14 +454,19 @@
       }
       .panel-productos {
         border-right: none;
-        border-bottom: 2px solid var(--border);
-        flex: 1; /* Takes middle space */
-        min-height: 0; /* Important for flex child scrolling */
+        border-bottom: none;
+        height: auto;
       }
       .panel-pedido {
-        flex: none;
-        height: 45vh; /* Takes bottom 45% of screen */
-        border-top: none;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 35vh;
+        z-index: 1000;
+        background: var(--surface);
+        border-top: 2px solid var(--accent);
+        box-shadow: 0 -10px 25px rgba(0,0,0,0.5);
       }
     }
   </style>
